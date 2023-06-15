@@ -11,6 +11,7 @@ from langchain.schema import (
     SystemMessage,
 )
 
+
 og_json_value = json_value.to_json_value
 
 
@@ -46,7 +47,10 @@ def to_json_value(x: Any) -> json_value.JSONValue:
         return {
             "Human": x.content,
         }
-
+    # Hack required to get around LangChain not having serializable Memory for now
+    elif hasattr(x, "dict") and callable(x.dict):
+        if hasattr(x, "memory"):
+            x.memory = None
     return og_json_value(x)
 
 
