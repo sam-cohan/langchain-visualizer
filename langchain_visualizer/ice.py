@@ -1,4 +1,7 @@
+import dataclasses
 import time
+from inspect import isfunction
+from math import isnan
 from typing import Any, List, Union
 
 from ice import json_value, server
@@ -10,9 +13,38 @@ from langchain.schema import (
     LLMResult,
     SystemMessage,
 )
+from fvalues import F
 
 
-og_json_value = json_value.to_json_value
+# Hack to stop x.dict() causing issues
+def og_json_value(x: Any) -> json_value.JSONValue:
+    if isinstance(x, dict):
+        return {
+            k if isinstance(k, str) else repr(k): to_json_value(v) for k, v in x.items()
+        }
+    if isinstance(x, (list, tuple, set)):
+        return [to_json_value(v) for v in x]
+    if isinstance(x, F):
+        return {"__fstring__": to_json_value(x.parts)}
+    if hasattr(x, "dict") and callable(x.dict):
+        try:
+            if hasattr(x, "memory"):
+                x.memory = None
+            x = x.dict()
+        except TypeError:  # raised if wrong number of arguments
+            pass
+        else:
+            return to_json_value(x)
+    if dataclasses.is_dataclass(x):
+        return to_json_value(dataclasses.asdict(x))
+    if isfunction(x):
+        return dict(class_name=x.__class__.__name__, name=x.__name__)
+    if isinstance(x, float):
+        return None if isnan(x) else x
+    if isinstance(x, (int, str, bool, type(None))):
+        return x
+    return repr(x)
+
 
 
 def to_json_value(x: Any) -> json_value.JSONValue:
@@ -47,7 +79,7 @@ def to_json_value(x: Any) -> json_value.JSONValue:
         return {
             "Human": x.content,
         }
-    # Hack required to get around LangChain not having serializable Memory for now
+    # Hack required
     elif hasattr(x, "dict") and callable(x.dict):
         if hasattr(x, "memory"):
             x.memory = None
