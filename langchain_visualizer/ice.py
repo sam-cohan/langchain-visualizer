@@ -67,4 +67,4 @@ def wait_until_server_running():
 json_value.to_json_value = to_json_value
 server.ICE_WAIT_TIME = 10  # type: ignore
 server.wait_until_server_running = wait_until_server_running
-ice_settings.settings.OUGHT_ICE_HOST = "127.0.0.1"
+ice_settings.settings.OUGHT_ICE_HOST = "0.0.0.0"
