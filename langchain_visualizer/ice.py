@@ -11,7 +11,6 @@ from langchain.schema import (
     SystemMessage,
 )
 
-
 og_json_value = json_value.to_json_value
 
 
